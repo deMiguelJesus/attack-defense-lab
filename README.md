@@ -1,26 +1,17 @@
 # Attack-Defense Lab
 
-## Objective
+## Project Objectives
 
-The main objective of this project is to create two virtual machines using KVM (Kernel-based Virtual Machine) in Ubuntu Linux one with Kali Linux and the other one with Metasploitable 2. 
-
-
-Important security measures to take into account before running this example
-- Run in an isolated network (no internet).
-- Disable auto-bridging to your host.
-- Ensure Metasploitable 2 is never exposed to external networks.
-
-## Steps
- 
- The steps are the following:
-
-1. Set up the virtual machines
+1. Set up the lab: Create two virtual machines: (1) **Kali Linux VM** (Attacker machine) – Used for penetration testing; and (2) **Metasploitable 2 VM** (Target machine) – A deliberately vulnerable Linux system.
 2. Attack the target VM (Ethical Hacking Test)
 3. Secure the target VM (Defensive measures)
 
+## Considerations Objectives
 
-
-
+Important security measures to take into account before running this project:
+- Run in an isolated network (no internet).
+- Disable auto-bridging to your host.
+- Ensure Metasploitable 2 is never exposed to external networks.
 
 
 
