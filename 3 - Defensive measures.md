@@ -103,3 +103,15 @@ sudo iptables -I INPUT 1 -p tcp --dport 6200 -j DROP
 - **`-p tcp`**: This specifies the **protocol**. The rule applies to **TCP** traffic (as opposed to other protocols like UDP, ICMP, etc.).
 - **`--dport 6200`**: This option defines the **destination port**. The rule applies to incoming traffic on **port 6200**.
 - **`-j DROP`**: This specifies the **action** to take if the rule matches. The `DROP` action means that the incoming traffic on port 6200 will be silently discarded (not allowed through). The connection will not be established, and no response will be sent.
+
+
+
+1. Show All iptables Rules
+
+To list all rules in a readable format:
+
+sudo iptables -L -v -n
+
+    -L → List rules
+    -v → Show detailed information
+    -n → Show numerical IPs (prevents DNS lookup delays)

@@ -6,7 +6,7 @@
 2. Attack the target VM (Ethical Hacking Test)
 3. Secure the target VM (Defensive measures)
 
-## Considerations Objectives
+## Considerations
 
 Important security measures to take into account before running this project:
 - Run in an isolated network (no internet).
@@ -15,3 +15,4 @@ Important security measures to take into account before running this project:
 
 
 
+**Tools**: KVM, libvirt, QEMU, Kali Linux, Metasploitable 2, Metasploit, msfvenom, nmap, netstat, and tcpdump.
