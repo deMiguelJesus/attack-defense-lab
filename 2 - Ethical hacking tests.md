@@ -1,4 +1,3 @@
-
 # 2.1. Find the target and identify the vulnerability
 
 Scan with Nmap from Kali to know the target IP on the network:
@@ -226,11 +225,10 @@ I do not know the user password!
 
 ### 2.3.7. Hide Your Tracks (Stealth)
 
-REVISE THIS PART!!
 Make the SSH key hidden:
 
 ```
-chmod 400 ~/.ssh/authorized_keys
+chmod 400 ~/.ssh/authorized_keys  # read only by owner
 chattr +i ~/.ssh/authorized_keys  # Prevent deletion
 ```
 
@@ -268,5 +266,5 @@ john hashes.txt
 
 ![[Pasted image 20250215164847.png]]
 
-Now we have the root password.
+Now we have the root password: `msfadmin`.
 

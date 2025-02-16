@@ -1,3 +1,9 @@
+### Considerations
+Important security measures to take into account before running this project:
+- Run in an isolated network (no internet).
+- Disable auto-bridging to your host.
+- Ensure Metasploitable 2 is never exposed to external networks.
+
 # 1. 1. Install KVM and Required Tools
 
 KVM (Kernel-based Virtual Machine) is built into the Linux kernel, KVM is the best choice for running VMs on Linux servers. It's powerful and used in enterprise environments.

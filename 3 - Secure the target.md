@@ -1,8 +1,4 @@
-- Open ports
-- Exploits used
-- Security patches applied
-
-## 3.1. Analysis of vulnerability vsftpd 2.3.4
+## 3.1. Analysis of suspicious activity
 
 ## 3.1.1. Analysis during exploitation
 ### Option 1: Network connections
@@ -16,7 +12,7 @@ netstat -antp
 - `t` → Show TCP connections  
 - `p` → Show the process associated with the connection  
 
-![[Pasted image 20250211211920.png]]
+![[images/Pasted image 20250211211920.png]]
 
 We found the following suspicious activity:
 - **Protocol**: `tcp`
@@ -39,10 +35,9 @@ ps aux | grep sh
 
 We have found the unrecognized process PID `4922` named `sh` as we have found in option 1.
 
-![[Pasted image 20250211212857.png]]
+![[images/Pasted image 20250211212857.png]]
 
 ### Option 3:  Monitor network traffic
-
 If the attack is ongoing, use **tcpdump** to capture packets through the infected port:
 
 ```bash
@@ -63,6 +58,11 @@ cat /var/log/auth.log
 
 Someone with root access has read the file `testfile.txt`:
 ![[Pasted image 20250213203019.png]]
+And executed an unknown executable named `hola`:
+![[Pasted image 20250216164835.png]]
+
+Moreover, attacker has injected a public ssh key in the system to connect to ssh as root user:
+![[Pasted image 20250216164120.png]]
 
 Check the `vsftp.log` to see multiple failed attempts or unexpected logins:
 ```bash
@@ -71,18 +71,18 @@ cat /var/log/vsftpd.log
 
 ![[Pasted image 20250211212437.png]]
 
-## 3.1.3. Conclusions of the exploit
+## 3.1.3. Conclusions and consequences of the exploit
 
-The infected `tcp`port is the `6200` with the service `vsftpd`. Moreover, there is a reverse shell running as PID `4922` from the attacker ip `192.168.56.110`. **The attacker has root access to the system.**
-
-If we go to the [NIST database](https://nvd.nist.gov/vuln/detail/CVE-2011-2523) to investigate about the possible exploitation, we see that the vulnerability is called `CVE-2011-2523`:
+The infected `tcp`port is `6200` with the service `vsftpd`. By using this vulnerability the attacker has run a reverse shell with PID `4922` from the ip `192.168.56.110`. If we go to the [NIST database](https://nvd.nist.gov/vuln/detail/CVE-2011-2523) to investigate about the possible exploitation, we see that the vulnerability is called `CVE-2011-2523`:
 
 > vsftpd 2.3.4 downloaded between 20110630 and 20110703 contains a backdoor which opens a shell on port 6200/tcp.
+
+Moreover, the attacker has injected a payload named `hola` to upload their public ssh key to the system to have root access. This exploit would have high priority as **the attacker has root access to the system.**
 
 
 ---
 ## 3.2. Defensive measures against vulnerability vsftpd 2.3.4
-### 3.2.1. **Kill malicious processes**
+### 3.2.1. Kill malicious processes
 
 Kill the PID of the reverse shells created by the vsfptd vulnerability and the payload:
   ```bash
@@ -92,7 +92,7 @@ Kill the PID of the reverse shells created by the vsfptd vulnerability and the p
 On the attacker the exploit is stopped:
 ![[Pasted image 20250211213942.png]]
 
-### 3.2.2. **Block the attacker's IP**
+### 3.2.2. Block the attacker's IP
 ```bash
 sudo iptables -A INPUT -s <ATTACKER_IP> -j DROP
 ```
@@ -119,7 +119,7 @@ sudo iptables -L -v -n
 `-v` → Show detailed information
 `-n` → Show numerical IPs (prevents DNS lookup delays)
 
-### 3.2.3. **Block the infected ports**
+### 3.2.3. **Block the infected port**
 
 Block the port that is being exploited by the VSFPTD vulneravility (6200):
 ```bash
@@ -136,13 +136,20 @@ sudo iptables -I INPUT 1 -p tcp --dport 6200 -j DROP
 
 ---
 ## 3.3. Defensive measures against SSH Key persistence
-### 3.3.1. Manage SSH Keys
+### 3.3.1. Disable root logging in SSH connection
 
-- Monitor ~/.ssh/authorized_keys for unauthorized entries.
 - Disable SSH root login in `/etc/ssh/sshd_config`:
 ```
 PermitRootLogin no
 ```
+
+### 3.3.2. Manage SSH connection
+
+- Monitor ~/.ssh/authorized_keys for unauthorized entries.
+### 3.3.3. Block the attacker's IP
+Same as in 3.2.2.
+### 3.3.4. Block the infected port
+Same as in 3.2.3. In this case port 22.
 
 ---
 ## 3.4. Defensive measures against password and user details cracking
