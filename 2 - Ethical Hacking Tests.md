@@ -24,7 +24,9 @@ nmap -sV -p 21 192.168.56.107
 
 ![[Pasted image 20250211191406.png]]
 
-We will try to find a vulnerability related to that service version in Metasploit. Run Metasploit in Kali:
+vsftpd is prone to a backdoor vulnerability because the `vsftpd-2.3.4.tar.gz` source package file contains a backdoor (CVE-2011-2523). An attacker can cause the application to open a backdoor on port 6200 by logging to the FTP server with the username ':)'. We will try to find a vulnerability related to that service version in Metasploit. 
+
+Run Metasploit in Kali:
 ```
 msfconsole
 ```

@@ -2,8 +2,9 @@
 - Exploits used
 - Security patches applied
 
-## 3.1. Monitor Logs for Suspicious Activity in the target machine
+## 3.1. Analysis of vulnerability vsftpd 2.3.4
 
+## 3.1.1. Analysis during exploitation
 ### Option 1: Network connections
 Run the following command to see active network connections and identify suspicious IPs:
 
@@ -17,56 +18,70 @@ netstat -antp
 
 ![[Pasted image 20250211211920.png]]
 
+We found the following suspicious activity:
+- **Protocol**: `tcp`
 - **Attacker's IP:** `192.168.1.110`
-- **Port Used:** `6200` (Reverse shell port)
-- **PID**: 4922 (Reverse shell)
+- **Port Used:** `6200`
+- **PID**: `4922` 
+- **Program name**: `sh` (Reverse shell)
 
-### Option 2: System logs
-
-Check FTP authentication logs for suspicious login attempts:
-```bash
-cat /var/log/auth.log
-```
-
-![[Pasted image 20250213203019.png]]
-
-```bash
-cat /var/log/vsftpd.log
-```
-
-If you see multiple failed attempts or unexpected logins, note the source IP.
-
-![[Pasted image 20250211212437.png]]
-
-### Option 3:  Check Running Processes
-Find active reverse shells or suspicious services:
+### Option 2:  Check Running Processes
+Find active reverse shells or suspicious services. Attackers often use:
+- **Netcat (nc)** for reverse shells
+- **Bash shells** (`/bin/bash -i`)
+- **Python reverse shell scripts**
 
 ```bash
 ps aux | grep nc
 ps aux | grep bash
 ps aux | grep sh
 ```
-Attackers often use:
-- **Netcat (nc)** for reverse shells
-- **Bash shells** (`/bin/bash -i`)
-- **Python reverse shell scripts**
+
+We have found the unrecognized process PID `4922` named `sh` as we have found in option 1.
 
 ![[Pasted image 20250211212857.png]]
 
-### Option 4:  Monitor network traffic
+### Option 3:  Monitor network traffic
 
-If the attack is ongoing, use **tcpdump** to capture packets:
+If the attack is ongoing, use **tcpdump** to capture packets through the infected port:
 
 ```bash
 sudo tcpdump -i eth0 port 6200
 ```
 
-This will show real-time FTP traffic, helping you identify the attacker:
+This will show real-time traffic, helping you identify the attacker:
 
 ![[Pasted image 20250211213232.png]]
 
+## 3.1.2. Analysis after exploitation
+### Option 1: System logs
+
+Check authentication logs for suspicious login attempts:
+```bash
+cat /var/log/auth.log
+```
+
+Someone with root access has read the file `testfile.txt`:
+![[Pasted image 20250213203019.png]]
+
+Check the `vsftp.log` to see multiple failed attempts or unexpected logins:
+```bash
+cat /var/log/vsftpd.log
+```
+
+![[Pasted image 20250211212437.png]]
+
+## 3.1.3. Conclusions of the exploit
+
+The infected `tcp`port is the `6200` with the service `vsftpd`. Moreover, there is a reverse shell running as PID `4922` from the attacker ip `192.168.56.110`. **The attacker has root access to the system.**
+
+If we go to the [NIST database](https://nvd.nist.gov/vuln/detail/CVE-2011-2523) to investigate about the possible exploitation, we see that the vulnerability is called `CVE-2011-2523`:
+
+> vsftpd 2.3.4 downloaded between 20110630 and 20110703 contains a backdoor which opens a shell on port 6200/tcp.
+
+
 ---
-## 3.2. Defensive measures
+## 3.2. Defensive measures against vulnerability vsftpd 2.3.4
 ### 3.2.1. **Kill malicious processes**
 
 Kill the PID of the reverse shells created by the vsfptd vulnerability and the payload:
@@ -119,15 +134,18 @@ sudo iptables -I INPUT 1 -p tcp --dport 6200 -j DROP
 - **`--dport 6200`**: This option defines the **destination port**. The rule applies to incoming traffic on **port 6200**.
 - **`-j DROP`**: This specifies the **action** to take if the rule matches. The `DROP` action means that the incoming traffic on port 6200 will be silently discarded (not allowed through). The connection will not be established, and no response will be sent.
 
-### 3.2.3. Manage SSH Keys
+---
+## 3.3. Defensive measures against SSH Key persistence
+### 3.3.1. Manage SSH Keys
 
 - Monitor ~/.ssh/authorized_keys for unauthorized entries.
 - Disable SSH root login in `/etc/ssh/sshd_config`:
 ```
 PermitRootLogin no
 ```
-- Use SSH key restrictions (e.g., command="restricted_command").
 
-### 3.2.4. Hash passwords differently
+---
+## 3.4. Defensive measures against password and user details cracking
+### 3.4.1. Hash passwords differently
 
 In this case, it has hashed with md5. It can be used more secure encriptation like sha-256.
