@@ -12,7 +12,7 @@ netstat -antp
 - `t` → Show TCP connections  
 - `p` → Show the process associated with the connection  
 
-![[images/Pasted image 20250211211920.png]]
+![Alt text](/images/Pasted%20image%2020250211211920.png)
 
 We found the following suspicious activity:
 - **Protocol**: `tcp`
@@ -35,7 +35,7 @@ ps aux | grep sh
 
 We have found the unrecognized process PID `4922` named `sh` as we have found in option 1.
 
-![[images/Pasted image 20250211212857.png]]
+![Alt text](images/Pasted%20image%2020250211212857.png)
 
 ### Option 3:  Monitor network traffic
 If the attack is ongoing, use **tcpdump** to capture packets through the infected port:
@@ -46,7 +46,7 @@ sudo tcpdump -i eth0 port 6200
 
 This will show real-time traffic, helping you identify the attacker:
 
-![[Pasted image 20250211213232.png]]
+![Alt text](images/Pasted%20image%2020250211213232.png)
 
 ## 3.1.2. Analysis after exploitation
 ### Option 1: System logs
@@ -57,19 +57,19 @@ cat /var/log/auth.log
 ```
 
 Someone with root access has read the file `testfile.txt`:
-![[Pasted image 20250213203019.png]]
+![Alt text](images/Pasted%20image%2020250213203019.png)
 And executed an unknown executable named `hola`:
-![[Pasted image 20250216164835.png]]
+![Alt text](images/Pasted%20image%2020250216164835.png)
 
 Moreover, attacker has injected a public ssh key in the system to connect to ssh as root user:
-![[Pasted image 20250216164120.png]]
+![Alt text](images/Pasted%20image%2020250216164120.png)
 
 Check the `vsftp.log` to see multiple failed attempts or unexpected logins:
 ```bash
 cat /var/log/vsftpd.log
 ```
 
-![[Pasted image 20250211212437.png]]
+![Alt text](images/Pasted%20image%2020250211212437.png)
 
 ## 3.1.3. Conclusions and consequences of the exploit
 
@@ -90,7 +90,7 @@ Kill the PID of the reverse shells created by the vsfptd vulnerability and the p
   ```
  
 On the attacker the exploit is stopped:
-![[Pasted image 20250211213942.png]]
+![Alt text](images/Pasted%20image%2020250211213942.png)
 
 ### 3.2.2. Block the attacker's IP
 ```bash
@@ -108,7 +108,7 @@ sudo iptables -A INPUT -s <ATTACKER_IP> -j DROP
     - **`DROP`**: This action drops the packets (i.e., it silently discards the incoming traffic). No response will be sent back to the attacker, and the connection is effectively blocked.
 
 Kali cannot perform the attack
-![[Pasted image 20250211214221.png]] 
+![Alt text](images/Pasted%20image%2020250211214221.png)
 
 To list all rules in a readable format:
 ```
